@@ -6,6 +6,7 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
+const cors = require('cors')
 
 // Konfiguroidaan morganille token 'reqData'
 morgan.token('reqData', function getReqData (req) {
@@ -15,11 +16,11 @@ morgan.token('reqData', function getReqData (req) {
 })
 
 const app = express()
+app.use(express.static('build'))
+app.use(cors())
 app.use(bodyParser.json())
 // Asetetaan morganin tulostuksen sisältö tokeneilla
 app.use(morgan(':method :url :reqData :status :res[content-length] - :response-time ms'))
-
-const port = 3001
 
 let persons = [
       {
@@ -94,7 +95,7 @@ app.post('/api/persons', (req, res) => {
     // Tarkistetaan, ettei nimi ole vielä luettelossa.
     const foundPerson = persons.find(p => p.name.toLowerCase() === name.toLowerCase())
     if (foundPerson) {
-        return res.status(400).json({ error: 'name must be unique' })
+        return res.status(400).end()
     }
 
     // Luodaan lisättävä olio.
@@ -113,10 +114,18 @@ const generateId = () => {
 
 app.delete('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
+    const removedPerson = persons.find(p => p.id === id)
+
+    // Jos poistettavaa henkilöä ei löytynyt palvelimen datasta
+    if (!removedPerson) {
+        return res.status(400).end()
+    }
+
     persons = persons.filter(p => p.id !== id)
-    res.status(204).end()
+    res.status(200).json(removedPerson)
 })
 
-app.listen(port)
-
-console.log('palvelin käynnistyi')
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`)
+})
