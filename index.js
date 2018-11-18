@@ -1,7 +1,23 @@
+/**
+ * Full Stack open tehtävät 2.6-2.11
+ * Backend.
+ */
+
 const express = require('express')
 const bodyParser = require('body-parser')
+const morgan = require('morgan')
+
+// Konfiguroidaan morganille token 'reqData'
+morgan.token('reqData', function getReqData (req) {
+    console.log(req.body)
+    data = JSON.stringify(req.body)
+    return data
+})
+
 const app = express()
 app.use(bodyParser.json())
+// Asetetaan morganin tulostuksen sisältö tokeneilla
+app.use(morgan(':method :url :reqData :status :res[content-length] - :response-time ms'))
 
 const port = 3001
 
@@ -97,7 +113,6 @@ const generateId = () => {
 
 app.delete('/api/persons/:id', (req, res) => {
     const id = Number(req.params.id)
-    console.log(`Poistetaan henkilö ${id}`)
     persons = persons.filter(p => p.id !== id)
     res.status(204).end()
 })
