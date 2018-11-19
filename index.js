@@ -1,5 +1,5 @@
 /**
- * Full Stack open tehtävät 2.6-2.11
+ * Full Stack open osan 3 tehtävät
  * Backend.
  */
 
@@ -10,14 +10,13 @@ const cors = require('cors')
 
 // Konfiguroidaan morganille token 'reqData'
 morgan.token('reqData', function getReqData (req) {
-    console.log(req.body)
     data = JSON.stringify(req.body)
     return data
 })
 
 const app = express()
-app.use(express.static('build'))
 app.use(cors())
+app.use(express.static('build'))
 app.use(bodyParser.json())
 // Asetetaan morganin tulostuksen sisältö tokeneilla
 app.use(morgan(':method :url :reqData :status :res[content-length] - :response-time ms'))
