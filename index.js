@@ -1,7 +1,9 @@
 /**
  * Full Stack open osan 3 tehtävät
- * Backend.
+ * Backend, tietokanta ja full stack.
  */
+
+const Person = require('./models/Person')
 
 const express = require('express')
 const bodyParser = require('body-parser')
@@ -21,67 +23,55 @@ app.use(bodyParser.json())
 // Asetetaan morganin tulostuksen sisältö tokeneilla
 app.use(morgan(':method :url :reqData :status :res[content-length] - :response-time ms'))
 
-let persons = [
-      {
-        "name": "Arto Hellas",
-        "number": "040-123456",
-        "id": 1
-      },
-      {
-        "name": "Martti Tienari",
-        "number": "040-123456",
-        "id": 2
-      },
-      {
-        "name": "Arto Järvinen",
-        "number": "040-123456",
-        "id": 3
-      },
-      {
-        "name": "Lea Kutvonen",
-        "number": "040-123456",
-        "id": 4
-      }
-    ]
-
 /**
  * Palauttaa koko puhelinluettelon JSON-muodossa.
  */
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person
+        .find({})
+        .then(people => {
+            res.json(people.map(Person.format))
+        })
+        .catch(error => {
+            console.log(error)
+        })
 })
 
 /**
  * Palauttaa tietyn henkilön tiedot JSON-muodossa.
  */
 app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(p => p.id === id)
-
-    if (person) {
-        res.json(person)
-    } else {
-        res.status(404).end()
-    }
+    Person
+        .findById(req.params.id)
+        .then(person => {
+            res.json(Person.format(person))
+        })
+        .catch(error => {
+            console.log(error)
+        })
 })
 
 /**
  * Palauttaa tiedon luettelon pituudesta.
  */
 app.get('/info', (req, res) => {
-    const lkm = persons.length
-    const date = new Date().toString()
-    res.send(`<p>Puhelinluettelossa on ${lkm} henkilön tiedot.</p>
-    <p>${date}</p>`)
+    Person.estimatedDocumentCount()
+        .then(count => {
+            const date = new Date().toString()
+            res.send(`<p>Puhelinluettelossa on ${count} henkilön tiedot.</p>
+            <p>${date}</p>`)        
+        })
+        .catch(error => {
+            console.log(error)
+        })
 })
 
 /**
  * Lisää henkilön luetteloon ja palauttaa lisätyt tiedot.
  */
 app.post('/api/persons', (req, res) => {
-    const body = req.body
-    const name = body.name.trim()
-    const number = body.number.trim()
+    const name = req.body.name.trim()
+    const number = req.body.number.trim()
 
     // Tarkistetaan, että nimi ja numero oli annettu.
     if (name === undefined || name.length < 3) {
@@ -92,39 +82,57 @@ app.post('/api/persons', (req, res) => {
     }
 
     // Tarkistetaan, ettei nimi ole vielä luettelossa.
-    const foundPerson = persons.find(p => p.name.toLowerCase() === name.toLowerCase())
-    if (foundPerson) {
-        return res.status(400).end()
-    }
-
-    // Luodaan lisättävä olio.
-    const person = {
-        name: name,
-        number: number,
-        id: generateId()
-    }
-    persons = persons.concat(person)
-    res.json(person)
+    const foundPeople = Person.find({name})
+    
+    foundPeople.then(found => {
+        if (found.length > 0) {
+            return res.status(400).json({ error: 'person is already in database' })
+        } else {
+            const person = new Person({
+                name: name,
+                number: number
+            })
+            person
+                .save()
+                .then((savedPerson) => {
+                    res.json(Person.format(savedPerson))
+                })
+        }})
+        .catch(error => {
+            console.log(error)
+        })
 })
 
-const generateId = () => {
-    return Math.floor(Math.random() * 5000000)
-}
+app.put('/api/persons/:id', (req, res) => {
+    const number = req.body.number.trim()
+
+    // Tarkistetaan, että numero oli annettu.
+    if (number === undefined || number.length < 6) {
+        return res.status(400).json({ error: 'check number' })
+    }
+
+    Person.findByIdAndUpdate(req.params.id, { number }, { new: true })
+        .then(updatedPerson => {
+            res.json(Person.format(updatedPerson))
+        })
+        .catch(error => {
+            console.log(error)
+        })
+
+})
 
 app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const removedPerson = persons.find(p => p.id === id)
-
-    // Jos poistettavaa henkilöä ei löytynyt palvelimen datasta
-    if (!removedPerson) {
-        return res.status(400).end()
-    }
-
-    persons = persons.filter(p => p.id !== id)
-    res.status(200).json(removedPerson)
+    Person.findByIdAndRemove(req.params.id)
+        .then(removedPerson =>
+            res.status(200).json(Person.format(removedPerson))
+        )
+        .catch(error => {
+            console.log(error)
+        })
 })
 
-const PORT = process.env.PORT || 3001
+//const PORT = process.env.PORT || 3001
+const PORT = 3001
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
