@@ -12,7 +12,7 @@ const cors = require('cors')
 
 // Konfiguroidaan morganille token 'reqData'
 morgan.token('reqData', function getReqData (req) {
-    data = JSON.stringify(req.body)
+    const data = JSON.stringify(req.body)
     return data
 })
 
@@ -59,7 +59,7 @@ app.get('/info', (req, res) => {
         .then(count => {
             const date = new Date().toString()
             res.send(`<p>Puhelinluettelossa on ${count} henkilön tiedot.</p>
-            <p>${date}</p>`)        
+            <p>${date}</p>`)
         })
         .catch(error => {
             console.log(error)
@@ -82,8 +82,8 @@ app.post('/api/persons', (req, res) => {
     }
 
     // Tarkistetaan, ettei nimi ole vielä luettelossa.
-    const foundPeople = Person.find({name})
-    
+    const foundPeople = Person.find({ name })
+
     foundPeople.then(found => {
         if (found.length > 0) {
             return res.status(400).json({ error: 'person is already in database' })

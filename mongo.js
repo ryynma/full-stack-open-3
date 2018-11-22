@@ -26,21 +26,21 @@ if (argv.length >= 2) {
 
     mongoose.connect(url, { useNewUrlParser: true })
     person
-    .save()
-    .then(result => {
-        mongoose.connection.close()
-    })
+        .save()
+        .then(() => {
+            mongoose.connection.close()
+        })
 
 // Muuten tulostetaan vain kokoelman sisältö.
 } else {
     mongoose.connect(url, { useNewUrlParser: true })
     Person
-      .find({})
-      .then(result => {
-          console.log('Puhelinluettelo:')
-          result.forEach(person =>
-            console.log(`${person.name} ${person.number}`)
-          )
-          mongoose.connection.close()
+        .find({})
+        .then(result => {
+            console.log('Puhelinluettelo:')
+            result.forEach(person =>
+                console.log(`${person.name} ${person.number}`)
+            )
+            mongoose.connection.close()
         })
 }
